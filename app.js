@@ -51,9 +51,13 @@ var log_file = fs.createWriteStream(__dirname + '/node.log', { flags: 'w' });
 var log_stdout = process.stdout;
 
 function logFormat(nivel, msg) {
-  var prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
-  log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
-  log_stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
+  if (MODO_PRODUCCION) {
+    log_stdout.write(nivel + util.format(msg) + '\n');
+  }else{
+    log_stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
+    let prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
+    log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
+  }
 }
 
 console.log = function (msg) { logFormat("<LOG> ", msg); };
