@@ -54,9 +54,9 @@ function logFormat(nivel, msg) {
   if (MODO_PRODUCCION) {
     log_stdout.write(nivel + util.format(msg) + '\n');
   }else{
-    log_stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
     let prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
     log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
+    log_stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
   }
 }
 
