@@ -48,15 +48,12 @@ app.use(express.static('public'));
 
 /** GLOZADA - LOG > INICIO: modificar console.log */
 var log_file = fs.createWriteStream(__dirname + '/node.log', { flags: 'w' });
+var log_stdout = process.stdout;
 
 function logFormat(nivel, msg) {
-  if (MODO_PRODUCCION) {
-    log_file.write(nivel + util.format(msg) + '\n');
-  }else{
-    var prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
-    log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
-    process.stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
-  }
+  var prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
+  log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
+  log_stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
 }
 
 console.log = function (msg) { logFormat("<LOG> ", msg); };
