@@ -15,8 +15,8 @@
  *
  * 1. Deploy this code to a server running Node.js
  * 2. Run `npm install`
- * 3. Update the VERIFY_TOKEN
- * 4. Add your PAGE_ACCESS_TOKEN to your environment vars
+ * 3. Update the TOKEN_VERIFY
+ * 4. Add your TOKEN_PAGE_ACCESS to your environment vars
  *
  */
 
@@ -35,10 +35,10 @@ const
   fs = require('fs'),
   util = require('util');
   /** GLOZADA - LOG > FIN: definir variables */
-
-const PAGE_ACCESS_TOKEN = process.env.PAGEACCESSTOKEN || config.get('pageAccessToken');
-const VERIFY_TOKEN = process.env.VERIFYTOKEN || config.get('validationToken');
-const PUERTO_HTTP = process.env.PORT || config.get('puertoHttp');
+const MODO_PRODUCCION = process.env.MODOPRODUCCION || false;
+const PUERTO_HTTP = process.env.PORT || 5000;
+const TOKEN_PAGE_ACCESS = process.env.TOKENPAGEACCESS || config.get('pageAccessToken');
+const TOKEN_VERIFY = process.env.TOKENVERIFY || config.get('validationToken');
 
 var app = express();
 app.set('view engine', 'ejs');
@@ -48,12 +48,15 @@ app.use(express.static('public'));
 
 /** GLOZADA - LOG > INICIO: modificar console.log */
 var log_file = fs.createWriteStream(__dirname + '/node.log', { flags: 'w' });
-var log_stdout = process.stdout;
 
 function logFormat(nivel, msg) {
-  var prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
-  log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
-  log_stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
+  if (MODO_PRODUCCION) {
+    log_file.write(nivel + util.format(msg) + '\n');
+  }else{
+    var prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
+    log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
+    process.stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
+  }
 }
 
 console.log = function (msg) { logFormat("<LOG> ", msg); };
@@ -69,9 +72,10 @@ console.config("[DESPLIEGUE] Bot-IntegracionFBMessenger se esta iniciando...");
 // Sets server port and logs message on success
 //app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
 app.listen(PUERTO_HTTP, function () {
-  console.config('[app.listen] const PUERTO_HTTP: ' + PUERTO_HTTP);
-  console.config('[app.listen] const PAGE_ACCESS_TOKEN: ' + PAGE_ACCESS_TOKEN);
-  console.config('[app.listen] const VERIFY_TOKEN: ' + VERIFY_TOKEN);
+  console.config('[app.listen] MODO_PRODUCCION: ' + MODO_PRODUCCION);
+  console.config('[app.listen] PUERTO_HTTP: ' + PUERTO_HTTP);
+  console.config('[app.listen] TOKEN_PAGE_ACCESS: ' + TOKEN_PAGE_ACCESS);
+  console.config('[app.listen] TOKEN_VERIFY: ' + TOKEN_VERIFY);
 });
 
 /*
@@ -130,7 +134,7 @@ app.post('/webhook', (req, res) => {
  * GLOZADA OK: La plataforma de Messenger enviara una solicitud GET al webhook con el identificador de verificacion
  * que se haya facilitado. Si el webhook es valido y se ha configurado correctamente para responder a la 
  * solicitud de verificacion, guarda la configuracion y permite atender los eventos generados por el chatbot.
- * NOTA IMPORTANTE: Verificar que el valor de 'VALIDATION_TOKEN' corresponda el mismo valor
+ * NOTA IMPORTANTE: Verificar que el valor de 'TOKEN_VALIDATION' corresponda el mismo valor
  * configurado en:
  *   (1) Pagina de administracion de aplicaciones de la plataforma messenger >Mis aplicaciones >
  *       NOMBRE_APP > Menu PRODUCTOS > Messenger > Configuracion - panel Webhooks - boton Configurar Webhooks >
@@ -148,7 +152,7 @@ app.get('/webhook', (req, res) => {
   if (mode && token) {
   
     // Check the mode and token sent are correct
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+    if (mode === 'subscribe' && token === TOKEN_VERIFY) {
       
       // Respond with 200 OK and challenge token from the request
       console.log('[app.get] WEBHOOK_VERIFIED');
@@ -236,7 +240,7 @@ function callSendAPI(sender_psid, response) {
   // Send the HTTP request to the Messenger Platform
   request({
     "uri": "https://graph.facebook.com/v2.6/me/messages",
-    "qs": { "access_token": PAGE_ACCESS_TOKEN },
+    "qs": { "access_token": TOKEN_PAGE_ACCESS },
     "method": "POST",
     "json": request_body
   }, (err, res, body) => {
