@@ -29,22 +29,26 @@ const
   body_parser = require('body-parser'),
   config = require('config'),
   //app = express().use(body_parser.json()), // creates express http server
-  /** GLOZADA - LOG > INICIO: definir variables */
-  https = require('https'),
-
+  // GLOZADA: Manejo de log
   fs = require('fs'),
-  util = require('util');
-  /** GLOZADA - LOG > FIN: definir variables */
-const MODO_PRODUCCION = process.env.MODOPRODUCCION || false;
+  // GLOZADA: Manejo de log
+  util = require('util'),
+  // GLOZADA: BD Redis
+  Redis = require('ioredis'),
+  redis = new Redis(process.env.REDIS_URL);
+
+
+const MODO_PRODUCCION = process.env.MODO_PRODUCCION || false;
 const PUERTO_HTTP = process.env.PORT || 5000;
-const TOKEN_PAGE_ACCESS = process.env.TOKENPAGEACCESS || config.get('pageAccessToken');
-const TOKEN_VERIFY = process.env.TOKENVERIFY || config.get('validationToken');
+const TOKEN_PAGE_ACCESS = process.env.TOKEN_PAGE_ACCESS || config.get('pageAccessToken');
+const TOKEN_VERIFY = process.env.TOKEN_VERIFY || config.get('validationToken');
 
 var app = express();
 app.set('view engine', 'ejs');
 app.use(body_parser.json());
 // GLOZADA: use the following code to serve images, CSS files, and JavaScript files in a directory named public
 app.use(express.static('public'));
+
 
 /** GLOZADA - LOG > INICIO: modificar console.log */
 var log_file = fs.createWriteStream(__dirname + '/node.log', { flags: 'w' });
@@ -67,16 +71,25 @@ console.error = function (msg) { logFormat("<ERROR> ", msg); };
 console.config = function (msg) { logFormat("<CONFIG> ", msg); };
 /** GLOZADA - LOG > FIN: modificar console.log */
 
-
 console.config("[DESPLIEGUE] Bot-IntegracionFBMessenger se esta iniciando...");
 
 // Sets server port and logs message on success
 //app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
+// GLOZADA: Utilizada para arrancar el servidor HTTP
 app.listen(PUERTO_HTTP, function () {
+   // GLOZADA: BD Redis
+  redis.set('registroprueba', 'RedisBD:IntegracionFBMessenger').then(function (resBD) {
+    if (!resBD) {
+      console.error('[app.listen] REDIS BD: No se pudo persistir el registro de prueba.');
+    } else {
+      console.config('[app.listen] REDIS BD: ' + resBD);
+      redis.del("registroprueba");
+    }
+  });
   console.config('[app.listen] MODO_PRODUCCION: ' + MODO_PRODUCCION);
   console.config('[app.listen] PUERTO_HTTP: ' + PUERTO_HTTP);
   console.config('[app.listen] TOKEN_PAGE_ACCESS: ' + TOKEN_PAGE_ACCESS);
-  console.config('[app.listen] TOKEN_VERIFY: ' + TOKEN_VERIFY);
+  console.config('[app.listen] TOKEN_VERIFY: ' + TOKEN_VERIFY);  
 });
 
 /*
@@ -253,6 +266,11 @@ function callSendAPI(sender_psid, response) {
   }); 
 }
 
-
+//GLOZADA: Validar que no haya errores para obtener la conexion con la BD Redis
+redis.on('error',function(error) {
+  console.error("No se pudo obtener la conexion con la BD Redis. Se detiene la aplicacion."
+    +" Mensaje de error:"+error);
+  process.exit(1);
+});
 
 module.exports = app;
