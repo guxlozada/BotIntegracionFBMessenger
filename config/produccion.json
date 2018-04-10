@@ -1,0 +1,6 @@
+{
+    "appSecret": "b65318d2f927c690ddc283c2b0198a99",
+    "pageAccessToken": "EAALAwc1SNTIBAOZAQjZC7NRXx5p47v0QdlR1oU6pThSimQw9VfBwTTZBmcJXkGBU7a7YLPZCpQxLVFOCGmZBPdldbcRSxK2j8XZBecoS3ZAyJQd6Il2WTdVYbfGSdOLZBZAkKtmZB7t81BjYTlxWydQRZAfUZA0dVulF8j0NvvZBo1Uu3awZDZD",
+    "validationToken": "yoteautorizoaingresar",
+    "uriHttpRequestMessengerPlatform": "https://graph.facebook.com/v2.6/me/messages"
+}

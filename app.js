@@ -15,8 +15,8 @@
  *
  * 1. Deploy this code to a server running Node.js
  * 2. Run `npm install`
- * 3. Update the TOKEN_VERIFY
- * 4. Add your TOKEN_PAGE_ACCESS to your environment vars
+ * 3. Update the VALIDATION_TOKEN
+ * 4. Add your PAGE_ACCESS_TOKEN to your environment vars
  *
  */
 
@@ -37,12 +37,16 @@ const
   Redis = require('ioredis'),
   redis = new Redis(process.env.REDIS_URL);
 
-require('dotenv').config()
+// GLOZADA: Se utiliza para forzar la asignacion de la variables de ambiente desde el archivo '.env'
+// para poder realizar la misma accion sin necesidad de esta linea, se arranca el servidor 
+// con el comando 'heroku local' en lugar de 'npm start', siempre que se cuente con el cliente de heroku
+//require('dotenv').config();
 
-const MODO_PRODUCCION = process.env.MODO_PRODUCCION || false;
+const APP_SECRET = process.env.APP_SECRET || config.get('appSecret');
+const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN || config.get('pageAccessToken');
+const VALIDATION_TOKEN = process.env.VALIDATION_TOKEN || config.get('validationToken');
+const NODE_ENV = process.env.NODE_ENV || 'default';
 const PUERTO_HTTP = process.env.PORT || 5000;
-const TOKEN_PAGE_ACCESS = process.env.TOKEN_PAGE_ACCESS || config.get('pageAccessToken');
-const TOKEN_VERIFY = process.env.TOKEN_VERIFY || config.get('validationToken');
 
 var app = express();
 app.set('view engine', 'ejs');
@@ -50,25 +54,24 @@ app.use(body_parser.json());
 // GLOZADA: use the following code to serve images, CSS files, and JavaScript files in a directory named public
 app.use(express.static('public'));
 
-
 /** GLOZADA - LOG > INICIO: modificar console.log */
 var log_file = fs.createWriteStream(__dirname + '/node.log', { flags: 'w' });
 var log_stdout = process.stdout;
 
 function logFormat(nivel, msj) {
-  if (MODO_PRODUCCION) {
+  if (NODE_ENV === 'produccion') {
     log_stdout.write('[' + nivel + '] ' + msj + '\n');
   } else {
     let prefijoFecha = '[' + new Date().toLocaleTimeString('it-IT', {
       timeZone: 'America/Bogota'
     }) + ' ' + nivel + '] ';
     log_file.write(prefijoFecha + msj + '\n');
-    log_stdout.write(prefijoFecha  + msj + '\n');
+    log_stdout.write(prefijoFecha + msj + '\n');
   }
 }
 
 console.log = function () { logFormat("LOG", util.format.apply(null, arguments)); };
-console.info = function () {logFormat("INFO", util.format.apply(null, arguments)); };
+console.info = function () { logFormat("INFO", util.format.apply(null, arguments)); };
 console.warn = function () { logFormat("WARN", util.format.apply(null, arguments)); };
 console.error = function () { logFormat("ERRO", util.format.apply(null, arguments)); };
 console.config = function () { logFormat("CFG", util.format.apply(null, arguments)); };
@@ -89,13 +92,14 @@ app.listen(PUERTO_HTTP, function () {
       redis.del("registroprueba");
     }
   });
-  console.config('[app.listen] MODO_PRODUCCION:' , MODO_PRODUCCION);
+  console.config('[app.listen] APP_SECRET:', APP_SECRET);
+  console.config('[app.listen] NODE_ENV:', process.env.NODE_ENV);
+  console.config('[app.listen] PAGE_ACCESS_TOKEN:', PAGE_ACCESS_TOKEN);
   console.config('[app.listen] PUERTO_HTTP:', PUERTO_HTTP);
-  console.config('[app.listen] TOKEN_PAGE_ACCESS:', TOKEN_PAGE_ACCESS);
-  console.config('[app.listen] TOKEN_VERIFY:', TOKEN_VERIFY);
+  console.config('[app.listen] VALIDATION_TOKEN:', VALIDATION_TOKEN);
 });
 
-function jsonToString(obj){
+function jsonToString(obj) {
   return JSON.stringify(obj, null, '\t');
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +136,7 @@ app.post('/webhook', (req, res) => {
 
   // Check the webhook event is from a Page subscription
   if (body.object === 'page') {
-
+    let resPendiente = true;
     body.entry.forEach(function (entry) {
 
       // Gets the body of the webhook event
@@ -151,11 +155,16 @@ app.post('/webhook', (req, res) => {
         handleMessage(sender_psid, webhook_event.message);
       } else if (webhook_event.postback) {
         handlePostback(sender_psid, webhook_event.postback);
+      } else if (NODE_ENV !== 'produccion'){
+        resPendiente = false;
+        res.status(200).send('EVENTO_NO_PROCESADO');
       }
 
     });
-    // Return a '200 OK' response to all events
-    res.status(200).send('EVENTO_RECIBIDO');
+    if(resPendiente){
+      // Return a '200 OK' response to all events
+      res.status(200).send('EVENTO_RECIBIDO');
+    }
 
   } else {
     // Return a '404 Not Found' if event is not from a page subscription
@@ -189,7 +198,7 @@ app.get('/webhook', (req, res) => {
   if (mode && token) {
 
     // Check the mode and token sent are correct
-    if (mode === 'subscribe' && token === TOKEN_VERIFY) {
+    if (mode === 'subscribe' && token === VALIDATION_TOKEN) {
 
       // Respond with 200 OK and challenge token from the request
       console.log('[app.get] WEBHOOK_VERIFICADO');
@@ -277,10 +286,10 @@ function callSendAPI(sender_psid, response) {
 
   // Send the HTTP request to the Messenger Platform
   request({
-    //GLOZADA: CAMBIADO TEMPORALMENETE PARA PRUEBAS CON DUMMYS 
+    //GLOZADA: Se cambio a variable de entorno 
     //"uri": "https://graph.facebook.com/v2.6/me/messages",
-    "uri": "http://localhost:5000/messages",
-    "qs": { "access_token": TOKEN_PAGE_ACCESS },
+    "uri": config.get('uriHttpRequestMessengerPlatform'),
+    "qs": { "access_token": PAGE_ACCESS_TOKEN },
     "method": "POST",
     "json": request_body
   }, (err, res, body) => {
