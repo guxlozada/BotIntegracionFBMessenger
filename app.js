@@ -23,9 +23,9 @@
 'use strict';
 
 // Imports dependencies and set up http server
-const 
+const
   request = require('request'),
-  express = require('express'), 
+  express = require('express'),
   body_parser = require('body-parser'),
   config = require('config'),
   //app = express().use(body_parser.json()), // creates express http server
@@ -37,6 +37,7 @@ const
   Redis = require('ioredis'),
   redis = new Redis(process.env.REDIS_URL);
 
+require('dotenv').config()
 
 const MODO_PRODUCCION = process.env.MODO_PRODUCCION || false;
 const PUERTO_HTTP = process.env.PORT || 5000;
@@ -54,21 +55,23 @@ app.use(express.static('public'));
 var log_file = fs.createWriteStream(__dirname + '/node.log', { flags: 'w' });
 var log_stdout = process.stdout;
 
-function logFormat(nivel, msg) {
+function logFormat(nivel, msj) {
   if (MODO_PRODUCCION) {
-    log_stdout.write(nivel + util.format(msg) + '\n');
-  }else{
-    let prefijoFecha = '[' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + '] ';
-    log_file.write(prefijoFecha + nivel + util.format(msg) + '\n');
-    log_stdout.write(prefijoFecha + nivel + util.format(msg) + '\n');
+    log_stdout.write('[' + nivel + '] ' + msj + '\n');
+  } else {
+    let prefijoFecha = '[' + new Date().toLocaleTimeString('it-IT', {
+      timeZone: 'America/Bogota'
+    }) + ' ' + nivel + '] ';
+    log_file.write(prefijoFecha + msj + '\n');
+    log_stdout.write(prefijoFecha  + msj + '\n');
   }
 }
 
-console.log = function (msg) { logFormat("<LOG> ", msg); };
-console.info = function (msg) { logFormat("<INFO> ", msg); };
-console.warn = function (msg) { logFormat("<WARN> ", msg); };
-console.error = function (msg) { logFormat("<ERROR> ", msg); };
-console.config = function (msg) { logFormat("<CONFIG> ", msg); };
+console.log = function () { logFormat("LOG", util.format.apply(null, arguments)); };
+console.info = function () {logFormat("INFO", util.format.apply(null, arguments)); };
+console.warn = function () { logFormat("WARN", util.format.apply(null, arguments)); };
+console.error = function () { logFormat("ERRO", util.format.apply(null, arguments)); };
+console.config = function () { logFormat("CFG", util.format.apply(null, arguments)); };
 /** GLOZADA - LOG > FIN: modificar console.log */
 
 console.config("[DESPLIEGUE] Bot-IntegracionFBMessenger se esta iniciando...");
@@ -77,19 +80,40 @@ console.config("[DESPLIEGUE] Bot-IntegracionFBMessenger se esta iniciando...");
 //app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
 // GLOZADA: Utilizada para arrancar el servidor HTTP
 app.listen(PUERTO_HTTP, function () {
-   // GLOZADA: BD Redis
+  // GLOZADA: BD Redis
   redis.set('registroprueba', 'RedisBD:IntegracionFBMessenger').then(function (resBD) {
     if (!resBD) {
       console.error('[app.listen] REDIS BD: No se pudo persistir el registro de prueba.');
     } else {
-      console.config('[app.listen] REDIS BD: ' + resBD);
+      console.config('[app.listen] REDIS BD:', resBD);
       redis.del("registroprueba");
     }
   });
-  console.config('[app.listen] MODO_PRODUCCION: ' + MODO_PRODUCCION);
-  console.config('[app.listen] PUERTO_HTTP: ' + PUERTO_HTTP);
-  console.config('[app.listen] TOKEN_PAGE_ACCESS: ' + TOKEN_PAGE_ACCESS);
-  console.config('[app.listen] TOKEN_VERIFY: ' + TOKEN_VERIFY);  
+  console.config('[app.listen] MODO_PRODUCCION:' , MODO_PRODUCCION);
+  console.config('[app.listen] PUERTO_HTTP:', PUERTO_HTTP);
+  console.config('[app.listen] TOKEN_PAGE_ACCESS:', TOKEN_PAGE_ACCESS);
+  console.config('[app.listen] TOKEN_VERIFY:', TOKEN_VERIFY);
+});
+
+function jsonToString(obj){
+  return JSON.stringify(obj, null, '\t');
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CODIGO DE EJEMPLO ORIGINAL
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Listener para respuestas a FB Messenger para pruebas temporales
+ */
+app.post('/messages', (req, res) => {
+  console.info('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+  console.info('[app.post] GLOZADA Se recibio mensaje de respuesta en FB Messenger');
+  console.info('[app.post] body: ' + jsonToString(req.body));
+  console.info('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+
+  // Return a '200 OK' response to all events
+  res.status(200).send('EVENT_RECEIVED_POST_MESSAGE');
+
 });
 
 /*
@@ -101,38 +125,37 @@ app.listen(PUERTO_HTTP, function () {
  * las acciones que se realizan en ella. Los eventos se envían al webhook en formato JSON como
  * solicitudes POST
  */
-app.post('/webhook', (req, res) => {  
-  console.info('[app.post] GLOZADA Inicio');
+app.post('/webhook', (req, res) => {
+  console.info('[app.post] Request POST /webhook');
   // Parse the request body from the POST
   let body = req.body;
 
   // Check the webhook event is from a Page subscription
   if (body.object === 'page') {
 
-    body.entry.forEach(function(entry) {
+    body.entry.forEach(function (entry) {
 
       // Gets the body of the webhook event
       // GLOZADA: https://developers.facebook.com/docs/messenger-platform/reference/webhook-events/
       let webhook_event = entry.messaging[0];
-      console.log('[app.post] webhook_event: ' + webhook_event);
+      console.log('[app.post] webhook_event: ', jsonToString(webhook_event));
 
 
       // Get the sender PSID
       let sender_psid = webhook_event.sender.id;
-      console.log('[app.post] Sender ID: ' + sender_psid);
+      console.log('[app.post] Sender ID:', sender_psid);
 
       // Check if the event is a message or postback and
       // pass the event to the appropriate handler function
       if (webhook_event.message) {
-        handleMessage(sender_psid, webhook_event.message);        
+        handleMessage(sender_psid, webhook_event.message);
       } else if (webhook_event.postback) {
-        
         handlePostback(sender_psid, webhook_event.postback);
       }
-      
+
     });
     // Return a '200 OK' response to all events
-    res.status(200).send('EVENT_RECEIVED');
+    res.status(200).send('EVENTO_RECIBIDO');
 
   } else {
     // Return a '404 Not Found' if event is not from a page subscription
@@ -156,7 +179,7 @@ app.post('/webhook', (req, res) => {
  *   (2) Archivo 'default.json' - constante 'validationToken'
  */
 app.get('/webhook', (req, res) => {
-  console.info('[app.get] GLOZADA Inicio');
+  console.info('[app.get] Request GET /webhook');
   // Parse params from the webhook verification request
   let mode = req.query['hub.mode'];
   let token = req.query['hub.verify_token'];
@@ -164,29 +187,30 @@ app.get('/webhook', (req, res) => {
 
   // Check if a token and mode were sent
   if (mode && token) {
-  
+
     // Check the mode and token sent are correct
     if (mode === 'subscribe' && token === TOKEN_VERIFY) {
-      
+
       // Respond with 200 OK and challenge token from the request
-      console.log('[app.get] WEBHOOK_VERIFIED');
+      console.log('[app.get] WEBHOOK_VERIFICADO');
       res.status(200).send(challenge);
-    
+
     } else {
       // Responds with '403 Forbidden' if verify tokens do not match
-      res.sendStatus(403);      
+      res.sendStatus(403);
     }
   } else {
     // Responds with '403 Forbidden' if verify tokens do not match
-    res.sendStatus(403);      
+    res.sendStatus(403);
   }
 });
 
 function handleMessage(sender_psid, received_message) {
+  console.info("[handleMessage] sender_psid:%s \n mensaje:", sender_psid, jsonToString(received_message));
   let response;
-  
+
   // Checks if the message contains text
-  if (received_message.text) {    
+  if (received_message.text) {
     // Create the payload for a basic text message, which
     // will be added to the body of our request to the Send API
     response = {
@@ -220,15 +244,15 @@ function handleMessage(sender_psid, received_message) {
         }
       }
     }
-  } 
-  
+  }
+
   // Send the response message
-  callSendAPI(sender_psid, response);    
+  callSendAPI(sender_psid, response);
 }
 
 function handlePostback(sender_psid, received_postback) {
   console.log('[handlePostback] ok')
-   let response;
+  let response;
   // Get the payload for the postback
   let payload = received_postback.payload;
 
@@ -253,23 +277,24 @@ function callSendAPI(sender_psid, response) {
 
   // Send the HTTP request to the Messenger Platform
   request({
-    "uri": "https://graph.facebook.com/v2.6/me/messages",
+    //GLOZADA: CAMBIADO TEMPORALMENETE PARA PRUEBAS CON DUMMYS 
+    //"uri": "https://graph.facebook.com/v2.6/me/messages",
+    "uri": "http://localhost:5000/messages",
     "qs": { "access_token": TOKEN_PAGE_ACCESS },
     "method": "POST",
     "json": request_body
   }, (err, res, body) => {
     if (!err) {
-      console.log('[callSendAPI] message sent!')
+      console.log('[callSendAPI] EL mensaje fue enviado!')
     } else {
-      console.error("[callSendAPI] Unable to send message:" + err);
+      console.error("[callSendAPI] No fue posible enviar el mensaje por el siguiente error: \n", err);
     }
-  }); 
+  });
 }
 
 //GLOZADA: Validar que no haya errores para obtener la conexion con la BD Redis
-redis.on('error',function(error) {
-  console.error("No se pudo obtener la conexion con la BD Redis. Se detiene la aplicacion."
-    +" Mensaje de error:"+error);
+redis.on('error', function (err) {
+  console.error("No se pudo obtener la conexion con la BD Redis. Se detiene la aplicacion. \n", err);
   process.exit(1);
 });
 

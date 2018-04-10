@@ -7,4 +7,3 @@ pids
 *.dat
 Procfile
 .DS_Store
-/*.env
