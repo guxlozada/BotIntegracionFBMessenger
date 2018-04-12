@@ -1,6 +1,11 @@
 {
-    "appSecret": "TOKENAPLICACIONGLOZADA",
-    "pageAccessToken": "TOKENACCESOPAGINAGLOZADA",
-    "validationToken": "BOTINTEGRACIONFBMESSENGERGLOZADA",
-    "uriHttpRequestMessengerPlatform": "http://localhost:5000/messages"
+    "appSecret": "TOKENAPLICACIONDEFAULT",
+    "pageAccessToken": "TOKENACCESOPAGINADEFAULT",
+    "validationToken": "VALIDATIONTOKENDEFAULT",
+    "uriHttpRequestMessengerPlatform": "http://localhost:5000/messages",
+
+    "uriAUTRestLinkUser": "http://localhost:8080/Bot-Autenticacion-web/webresources/linkUserFB",
+    "uriAUTServletAutenticacion": "http://localhost:8080/Bot-Autenticacion-web/authorizeFB",
+    "uriNLPContexto": "http://localhost:8080/Bot-NLPServer-web/",
+    "uriNPLRest": "http://localhost:8080/Bot-NLPServer-web/webresources"
 }

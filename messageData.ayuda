@@ -1,0 +1,51 @@
+/**
+  * Ejemplos de objeto json generados como respuesta para despliegue en el chatbot (messageData).
+  */
+{
+  // (1) TEXTO SIMPLE:
+  {
+    "text": "Mensaje de respuesta que se entrega al usuario"
+  }
+  // (2) BOTON DE INICIO DE SESION:
+  {
+    "attachment": {
+      "type": "template",
+      "payload": {
+        "template_type": "button",
+        "text": "Iniciar Sesion",
+        "buttons": [
+          {
+            "type": "account_link",
+            "url": "https://bots.gestorinc.com/BankingBot-Authentication-web/authorizeFB" // URL ejemplo 
+          }
+        ]
+      }
+    }
+  }
+  // (3) OPCION MULTIPLE (botones con plantilla):
+  {
+    "attachment": {
+      "type": "template",
+      "payload": {
+        "template_type": "generic",
+        "elements": [{
+          "title": "Le gusta la aplicacion?", //Pregunta relacionada a la seleccion multiple
+          "subtitle": "seleccione su respuesta dando clic en uno de los botones.",
+          "image_url": attachment_url,
+          "buttons": [
+              {
+                "type": "postback",
+                "title": "Creo que si!",
+                "payload": "si",
+              },
+              {
+                "type": "postback",
+                "title": "Definitivamente No!",
+                "payload": "no",
+              }
+            ],
+          }]
+        }
+      }
+    }
+}
