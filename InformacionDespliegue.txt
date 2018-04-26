@@ -1,0 +1,65 @@
+# Pre-requisitos
+npm: 5.6.0
+Servidor: Node.js v8.10.8
+BD: Redis
+
+# Variables de sistema
+
+-   process.env.NODE_ENV: (REQUERIDO) Se utiliza para identificar el modo de ejecucion de la aplicacion. 
+    Opciones (desarrollo, produccion, OTRO_PERSONALIZADO, default). 
+    En caso de no definir esta variable se utiliza el valor por omision: 'default'.
+-   process.env.PORT: (OPCIONAL) Se utiliza para modificar el puerto de despliegue de la aplicacion.
+    En caso de no definir esta variable se utiliza el valor por omision: 5000.
+
+NOTA IMPORTANTE: Si no se definen las siguientes variables de sistema, se utiliza las variables de ambiente 
+definidas en la aplicacion.
+
+-   process.env.APP_SECRET: (SOLO CFG AVANZADA) Token 'IDENTIFICADOR DE LA APLICACIÓN' proporcionado por la 
+    plataforma FB Messenger para la aplicacion.
+    Ver: URL_DEVELOPERS/APLICACION - IDENTIFICADOR DE LA APLICACION
+-   process.env.PAGE_ACCESS_TOKEN: (SOLO CFG AVANZADA) Token 'Identificador de acceso a la página' proporcionado
+    por la plataforma FB Messenger para la pagina  relacionada a Messenger.
+    Ver: URL_DEVELOPERS/APLICACION/PRODUCTOS - Messenger/Panel - Generación de identificador
+-   process.env.VALIDATION_TOKEN: (SOLO CFG AVANZADA) Token 'dentificador de verificación' que se
+    configura manualmente en la plataforma FB Messenger para complementar la validación de las llamadas
+    de eventos webhooks.
+    Ver: URL_DEVELOPERS/APLICACION/PRODUCTOS - Messenger/Panel - Webhooks /Btn Configurar webhooks - Identificador de verificación
+-   process.env.URI_AUT_REST_LINKUSER: (REQUERIDA) Endpoint del REST de la aplicacion 'Bot-Autenticacion-BE'
+    que se utiliza para vincular el usuario de FB Messenger.
+    Ejemplo: http://localhost:8080/Bot-Autenticacion-BE-web/webresources/linkUserFB
+-   process.env.URI_AUT_SERVLET_LOGIN: (REQUERIDA) URI de la pagina/servlet gestionada por la aplicacion
+    'Bot-Autenticacion-BE' para proveer el formulario que permite la autenticacion del usuario de FB Messenger
+    en la aplicacion de negocio vinculada al chatbot (Banca electronica).
+    Ejemplo: http://localhost:8080/Bot-Autenticacion-BE-web/authorizeFB
+-   process.env.URI_REQ_FB_MESSENGE: (SOLO CFG AVANZADA) Endpoint del REST de la plataforma FB Messenger que se utiliza
+    para enviar las respuestas a las llamadas (eventos webhooks) del usuario de FB Messenger.
+-   process.env.URI_NLP_CONTEXTO: (SOLO CFG AVANZADA) Contexto de la aplicacion Bot-NLPServer
+    Ejemplo:http://localhost:8080/Bot-NLPServer-web/
+-   process.env.URI_AUT_REST: (SOLO CFG AVANZADA) Contexto para los endpoint de los REST de la aplicacion Bot-NLPServer
+    Ejemplo:http://localhost:8080/Bot-NLPServer-web/webresources
+
+# Variables de ambiente
+
+(1) config/produccion.json: Variables de ambiente por omision que se utilizan cuando la variable 
+    process.env.NODE_ENV=produccion y no se ha definido la variable en el sistema (ver apartado anterior). 
+    En caso de no definir variables se utilizan los valores por omision del archivo 'default.json'.
+(2) config/desarrollo.json: Variables de ambiente por omision que se utilizan cuando la variable 
+    process.env.NODE_ENV=desarrollo y no se ha definido la variable en el sistema (ver apartado anterior). 
+    En caso de no definir variables se utilizan los valores por omision del archivo 'default.json'.
+(3) config/default.json: Variables de ambiente por omision que se utilizan cuando no se ha definido variables de ambiente
+    y tampoco se ha definido la variable en el sistema (ver apartado anterior). 
+
+# Ambientes adicionales
+
+Para crear variables de ambiente que se utilizen en modo diferente al de desarrollo y produccion, se necesita:
+(1) Asignar el nombre del ambiente adicional a la variable process.env.NODE_ENV=otro_ambiente/certificacion/etc.
+(2) De ser necesario se puede crear un archivo 'config/otro_ambiente.json' dondes se defina los valores personalizados
+    para las variables de ambiente.
+
+# BD Redis
+La base de datos Redis requiere la variable de ambiente 'process.env.REDIS_URL' donde se define la URL con los datos
+de la conexion (Ej: redis://:@127.0.0.1:6379/0). 
+(1) desarrollo: cuando se utiliza una BD local, solo se requiere que el servidor de Redis este iniciado y 
+    automaticamente sin necesidad de definir la variable 'process.env.REDIS_URL'.
+(2) heroku: si la BD se encuentra en la nube de keroku, la misma plataforma se encarga de asignar la variable de 
+    ambiente 'process.env.REDIS_URL' para que este disponible para las aplicaciones asociadas.

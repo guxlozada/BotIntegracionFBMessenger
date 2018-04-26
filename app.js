@@ -86,28 +86,36 @@ var logFile = fs.createWriteStream(__dirname + '/node.log', { flags: 'w' });
 var logStdout = process.stdout;
 
 // GLOZADA: re-definir las funciones por omision para la consola de mensajes
-function logFormat(nivel, msj) {
+function logFormat(nivel, msj, resaltar) {
+  let msjAuditoria = msj + '\n';
   if (NODE_ENV === 'default') {
-    let prefijoFecha = '[' + new Date().toLocaleTimeString('it-IT', {
-      timeZone: 'America/Bogota'
-    }) + ' ' + ID_APP + " " + nivel + '] ';
-    logFile.write(prefijoFecha + msj + '\n');
-    logStdout.write(prefijoFecha + msj + '\n');
+    msjAuditoria = '[' + new Date().toLocaleTimeString('it-IT', { timeZone: 'America/Bogota' })
+      + '] ' + msjAuditoria;
+    logFile.write([ID_APP, ' ', nivel, ' ', msjAuditoria].join(''));
+  }
+  if (resaltar) {
+    if (nivel == 'ERROR' || nivel === 'WARNING') {
+      logStdout.write(['\x1b[', resaltar, 'm[', ID_APP, ' ', nivel, '] ', msjAuditoria, '\x1b[0m'].join(''));
+    } else {
+      logStdout.write(['\x1b[', resaltar, 'm[', ID_APP, ' ', nivel, '] \x1b[0m', msjAuditoria].join(''));
+    }
   } else {
-    logStdout.write('[' + ID_APP + " " + nivel + '] ' + msj + '\n');
+    logStdout.write(['[', ID_APP, ' ', nivel, '] ', msjAuditoria].join(''));
   }
 }
+
 // GLOZADA: redefinir las funciones para los mensajes de consola
-console.log = function () { logFormat("LOG", util.format.apply(null, arguments)); };
+console.config = function () { logFormat("CFG", util.format.apply(null, arguments), 32); };
+console.error = function () { logFormat("ERROR", util.format.apply(null, arguments), 33); };
 console.info = function () { logFormat("INF", util.format.apply(null, arguments)); };
-console.warn = function () { logFormat("*WARNING*", util.format.apply(null, arguments)); };
-console.error = function () { logFormat("*ERROR*", util.format.apply(null, arguments)); };
-console.config = function () { logFormat("CFG", util.format.apply(null, arguments)); };
+console.log = function () { logFormat("LOG", util.format.apply(null, arguments)); };
+console.trace = function () { if (!MODO_PRODUCCION) logFormat("DEBUG", util.format.apply(null, arguments), 36); };
+console.warn = function () { logFormat("*WARNING*", util.format.apply(null, arguments), 36); };
 
 // Inicio del despliegue de la applicacion
 console.config("[DESPLIEGUE] La aplicacion se esta iniciando...");
 console.config('[DESPLIEGUE] APP_SECRET:', APP_SECRET);
-console.config('[DESPLIEGUE] NODE_ENV:', process.env.NODE_ENV);
+console.config('[DESPLIEGUE] NODE_ENV:', NODE_ENV);
 console.config('[DESPLIEGUE] PAGE_ACCESS_TOKEN:', PAGE_ACCESS_TOKEN);
 console.config('[DESPLIEGUE] PUERTO_HTTP:', PUERTO_HTTP);
 console.config('[DESPLIEGUE] VALIDATION_TOKEN:', VALIDATION_TOKEN);
@@ -160,7 +168,7 @@ if (!(URI_AUT_REST_LINKUSER && URI_AUT_SERVLET_LOGIN && URI_REQ_FB_MESSENGER
  *      la constante 'validationToken' del archivo '/config/AMBIENTE.json' (INTERNO)
  */
 app.get('/webhook', (req, res) => {
-  console.info('[app.get] Request GET /webhook. LLamada para validacion de la'
+  console.trace('[app.get] Request GET /webhook. LLamada para validacion de la'
     + ' clave de confianza (VALIDATION_TOKEN).');
 
   // Parse params from the webhook verification request
@@ -173,7 +181,7 @@ app.get('/webhook', (req, res) => {
     // Check the mode and token sent are correct
     if (mode === 'subscribe' && token === VALIDATION_TOKEN) {
       // Respond with 200 OK and challenge token from the request
-      console.log('[app.get] WEBHOOK_VERIFICADO');
+      console.trace('[app.get] WEBHOOK_VERIFICADO');
       res.status(200).send(challenge);
     } else {
       console.error("[app.get] La clave de confianza (VALIDATION_TOKEN) no es la correcta.");
@@ -200,9 +208,9 @@ app.get('/webhook', (req, res) => {
  * La plataforma envia los eventos de webhook como solicitudes POST al webhook.
  */
 app.post('/webhook', (req, res) => {
-  console.info('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
-  console.info('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< \n \n \n');
-  console.info('[app.post] Request POST /webhook. Llamada de eventos webhook');
+  console.trace('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
+  console.trace('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< \n \n \n');
+  console.trace('[app.post] Request POST /webhook. Llamada de eventos webhook');
   // Parse the request body from the POST
   let body = req.body;
 
@@ -219,7 +227,7 @@ app.post('/webhook', (req, res) => {
       // https://developers.facebook.com/docs/messenger-platform/reference/webhook-events/
       pageEntry.messaging.forEach(function (webhookEvent) {
         let senderId = webhookEvent.sender.id;
-        console.info('[app.post] webhookEvent:', jsonToTextoIdentado(webhookEvent));
+        console.trace('[app.post] webhookEvent:', jsonToTextoIdentado(webhookEvent));
 
         // Checkthe event type and pass the event to the appropriate handler function
         if (webhookEvent.message) {
@@ -269,14 +277,14 @@ app.post('/webhook', (req, res) => {
  * ver: https://developers.facebook.com/docs/messenger-platform/reference/webhook-events/messages#attachment
  */
 function receivedMessage(senderId, message) {
-  console.info("[receivedMessage] Procesando evento webhook 'message': %j", message);
+  console.trace("[receivedMessage] Procesando evento webhook 'message': %j", message);
 
   let messageId = message.mid;
 
   if (message.quick_reply) {
     // GLOZADA: Propaga a la app Bot-NLP el procesamiento de la respuesta a pregunta con opcion multiple
     let quickReplyPayload = message.quick_reply.payload;
-    console.log("[receivedMessage] Quick reply para el mensaje: %s, con la informacion: ",
+    console.trace("[receivedMessage] Quick reply para el mensaje: %s, con la informacion: ",
       messageId, quickReplyPayload);
     /** GLOZADA: PENDIENTE IMPLEMENTAR
       quickReplyReceived(senderId, quickReplyPayload);
@@ -295,7 +303,7 @@ function receivedMessage(senderId, message) {
 
   if (message.is_echo) {
     // GLOZADA: Simplemente registra en el log de la consolo el mensaje de eco
-    console.log("[receivedMessage] Se ha recibido un mensaje de eco. mid: %s, app_id: %d, metadata %s",
+    console.trace("[receivedMessage] Se ha recibido un mensaje de eco. mid: %s, app_id: %d, metadata %s",
       messageId, message.app_id, message.metadata);
   }
   //ORIGINAL: simplificado
@@ -314,61 +322,88 @@ function receivedMessage(senderId, message) {
  * para poder realizar consultas de 'negocio' a la app Bot-NLP.
  */
 function receivedAccountLink(senderId, accountLinking) {
-  console.info("[receivedMessage] Procesando evento webhook 'account_linking': %j", accountLinking);
+  console.trace("[receivedMessage] Procesando evento webhook 'account_linking': %j", accountLinking);
 
   let status = accountLinking.status;
 
   if (status === 'unlinked') {
     // GLOZADA: Apartado para desvincular la cuenta
-    console.log("[receivedAccountLink] Se ha recibido la solicitud para desvincular el usuario: ", senderId);
-    redis.del(senderId).then(() => { callSendAPI(senderId, textoToMensajeGenerico("Sesion Finalizada")); });
+    console.trace("[receivedAccountLink] Se ha recibido la solicitud para desvincular el usuario: ", senderId);
+    /** GLOZADA: PENDIENTE IMPLEMENTAR
+      llamada a un servicio REST que haga lo contrario a URI_AUT_REST_LINKUSER, donde se 
+      elimine/inactibe el registro de BD mongo donde queda vinculado el usuario.
+    */
+
+    redis.del("UsuarioFB:" + senderId).then(() => { callSendAPI(senderId, textoToMensajeGenerico("Sesion Finalizada")); });
     return;// Obliga a finalizar el procesamiento del mensaje
   }
   // GLOZADA: Apartado para vincular la cuenta
+  // authorization_code es generado al final de la autenticacion en la app Bot-AutenticacionBE
   var authCode = accountLinking.authorization_code;
 
-  console.log("[receivedAccountLink] Se ha recibido la solicitud para vincular el usuario: %s,"
-    + "con el codigo de autorizacion:", senderId, authCode);
+  console.trace("[receivedAccountLink] Se ha recibido la solicitud para registrar la vinculacion"
+    + " del usuario: %s, con el codigo de autorizacion:", senderId, authCode);
 
-  // GLOZADA: PENDIENTE IMPLEMENTAR: Verificar porque se persiste antes de
-  // verificar si es posible autenticar el usuario
-  redis.set(senderId, authCode);
+  // GLOZADA: PENDIENTE IMPLEMENTAR: Verificar porque se persiste antes de verificar si se 
+  // ha registrado la vinculacion en el Bot-AutenticacionBE, este deberia almacenarse
+  // una vez verificado la llamada al REST lin kUserFB y que se almacene con timeout configurado
+  // ORIGINAL: Se movio para mejorar la ubicacion del registro de sesion de usuario autenticado
+  // en redis
+  // redis.set(senderId, authCode);
 
   // GLOZADA: Llama al api de autenticacion para registrar el senderId y relacionarlo.
   let optionsLinkUser = {
-    method: 'POST',
+    "method": 'POST',
     // ORIGINAL: uri: config.get('uriAuthenticationBase') + '/linkUserFB',
-    uri: URI_AUT_REST_LINKUSER,
+    "uri": URI_AUT_REST_LINKUSER,
     // GLOZADA Informacion requerida por el servicio REST para vincular el usuario
-    json: {
+    "json": {
       "authCode": authCode,
       "senderId": senderId
     }
   };
+  /** GLOZADA: PENDIENTE IMPLEMENTAR
+   * Separar la vinculacion de cuenta con el inicio de conversacion con el chatbot. 
+   */
   request(optionsLinkUser, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      console.log("[receivedAccountLink] Usuario vinculado y registrado:", senderId);
+    console.info("[receivedAccountLink] Response llamada servicio REST /linkUserFB. ");
+    // GLOZADA: se descomenta el log solo para depuraciones de servicios REST
+    // console.trace("[receivedAccountLink] Response llamada servicio REST /linkUserFB. response: ", jsonToTextoIdentado(response));
 
-      // GLOZADA: Hace la llamada a la app Bot-NLP para generar el mensaje inicial de respuesta al usuario
-      let optionsInitChat = {
-        "method": 'GET',
-        // ORIGINAL: uri: config.get('uriNPLBase') + '/initChat?token=' + authCode
-        "uri": URI_NLP_REST + '/initChat?token=' + authCode
-      };
-      request(optionsInitChat, function (error1, response1, body1) {
-        if (!error1 && response1.statusCode == 200) {
-          console.log("[receivedAccountLink] Usuario autenticado en la aplicacion Bot-NLP");
-          let bodyObj = JSON.parse(body1);
-          callSendAPI(senderId, {
-            "text": bodyObj['text'],
-            "metadata": "INIT_BOT"
-          });
+    if (!error && response.statusCode == 200) {
+      console.trace("[receivedAccountLink] Usuario vinculado y registrado:", senderId);
+
+      // GLOZADA: Agregado para mejorar el lugar donde se registro de sesion de usuario autenticado
+      redis.set("UsuarioFB:" + senderId, authCode).then(function (resBD) {
+        if (resBD !== 'OK') {
+          sendErrorMessage(senderId, "receivedAccountLink_redis_vinculacion_usuario", new Error("Se produjo un error"
+            + "al registrar la vinculacion del usuario en Redis BD"));
         } else {
-          sendErrorMessage(senderId, "receivedAccountLink_initChat", error1);
+          // GLOZADA: Hace la llamada a la app Bot-NLP para generar el mensaje inicial de respuesta al usuario
+          let optionsInitChat = {
+            "method": 'GET',
+            // ORIGINAL: uri: config.get('uriNPLBase') + '/initChat?token=' + authCode
+            "uri": URI_NLP_REST + '/initChat?token=' + authCode
+          };
+          request(optionsInitChat, function (error1, response1, body1) {
+             // GLOZADA: se descomenta el log solo para depuraciones de servicios REST
+            console.trace("[receivedAccountLink] Response llamada servicio REST /initChat. response:" , jsonToTextoIdentado(response1));
+            if (!error1 && response1.statusCode == 200) {
+              console.trace("[receivedAccountLink] Usuario autenticado en la aplicacion Bot-NLP");
+              let bodyObj = JSON.parse(body1);
+              callSendAPI(senderId, {
+                "text": bodyObj['text'],
+                "metadata": "INIT_BOT"
+              });
+            } else {
+              sendErrorMessage(senderId, "receivedAccountLink_initChat", error1, body1);
+            }
+          });
         }
+
       });
     } else {
-      sendErrorMessage(senderId, "receivedAccountLink_linkUserFB", error);
+      sendErrorMessage(senderId, "receivedAccountLink_linkUserFB", error, body);
     }
   });
 }
@@ -381,7 +416,7 @@ function receivedAccountLink(senderId, accountLinking) {
  * https://developers.facebook.com/docs/messenger-platform/webhook-reference/authentication
  */
 function receivedAuthentication(senderId, webhookEvent) {
-  console.info("[receivedMessage] Procesando evento webhook 'optin': %j", webhookEvent.optin);
+  console.trace("[receivedMessage] Procesando evento webhook 'optin': %j", webhookEvent.optin);
 
   let recipientId = webhookEvent.recipient.id;
   let timeOfAuth = webhookEvent.timestamp;
@@ -392,7 +427,7 @@ function receivedAuthentication(senderId, webhookEvent) {
   // a way to do account linking when the user clicks the 'Send to Messenger' plugin.
   let passThroughParam = webhookEvent.optin.ref;
 
-  console.log("[receivedAuthentication] Autenticacion recibida. usuario: %s, pagina: %s, fecha: %d,"
+  console.trace("[receivedAuthentication] Autenticacion recibida. usuario: %s, pagina: %s, fecha: %d,"
     + " con la informacion de referencia: %s", senderId, recipientId, timeOfAuth, passThroughParam);
 
   // When an authentication is received, we'll send a message back to the
@@ -409,14 +444,19 @@ function receivedAuthentication(senderId, webhookEvent) {
  *    del mensaje de la peticion recibida para procesar.
  * @param {String} origenTxt Texto fijo que representa el origen que genero el error.
  * @param {Error} error Informacion del error generado al procesar las reglas de negocio.
+ * @param {String} body GLOZADA: temporalmente se lee el objeto de retorno no estandarizado par tratar de identificar la app origen
  */
-function sendErrorMessage(senderId, origenTxt, error) {
+function sendErrorMessage(senderId, origenTxt, error, body) {
 
   let sufijoMetadata = origenTxt || 'DESCONOCIDO';
 
   if (error instanceof Error) {
-    console.error("[sendErrorMessage] Error reportado. origen: %s, code: %s, message: %s, stack: \n",
-      sufijoMetadata, error.code, error.message, error.stack);
+    console.error("[sendErrorMessage] Error reportado. origen: %s, error: %s \n, stack: \n",
+      sufijoMetadata, jsonToTextoIdentado(error), error.stack);
+  } else if (body.origen) {
+    sufijoMetadata = body.origen;
+    console.error("[sendErrorMessage] Error reportado. origen: %s, servicioREST: %s, error:",
+      body.origen, body.servicioREST, body.mensajeError);
   } else {
     console.error("[sendErrorMessage] Error reportado. origen: %s, error:", sufijoMetadata, error);
   }
@@ -456,8 +496,10 @@ function callSendAPI(senderId, messageData) {
     "method": "POST",
     "json": requestBody
   }, (error, response, body) => {
+    console.trace("[callSendAPI] Response llamada servicio REST %s. response.statusCode: %s,"
+      + " response.statusMessage:", URI_REQ_FB_MESSENGER, response.statusCode, response.statusMessage);
     if (!error && response.statusCode == 200) {
-      console.log("[callSendAPI] El envio del mensaje fue satisfactorio. id mensaje: %s, destinatario: %s",
+      console.trace("[callSendAPI] El envio del mensaje fue satisfactorio. id mensaje: %s, destinatario: %s",
         body.recipient_id, body.message_id);
     } else {
       console.error("[callSendAPI] El envio del mensaje fallo. statusCode: %s, statusMessage: %s, error:\n",
@@ -483,7 +525,7 @@ function verifyRequestSignature(req, res, buf) {
     //console.error("[verifyRequestSignature] La request no contiene la firma de la aplicacion(APP_SECRET).");
     throw new Error("La request no contiene en el encabezado la firma de la aplicacion(APP_SECRET).");
   }
-  console.info("[verifyRequestSignature]  Verificando la firma de la aplicacion(APP_SECRET). signature:", signature);
+  console.trace("[verifyRequestSignature]  Verificando la firma de la aplicacion(APP_SECRET). signature:", signature);
 
   let elements = signature.split('=');
   // GLOZADA: desuso
@@ -554,13 +596,75 @@ redis.on('error', function (err) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Listener para respuestas a FB Messenger para pruebas temporales
+ * Listener para respuestas a FB Messenger para pruebas generadas por Bot-AutenticacionBE.
+ */
+app.get('/autenticacionBE', (req, res) => {
+  console.trace('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+  console.trace('Request GET /autenticacionBE;  HTTP request Dummy de FB Messenger');
+  let senderId = req.query['sender_id'];
+  let authorizationCode = req.query['authorization_code'];
+  console.trace('authorization_code: ', req.query['authorization_code']);
+  console.trace('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+
+  let accountLinkingData = { "status": "unlinked" };
+  if (authorizationCode) {
+    accountLinkingData = {
+      "status": "linked",
+      "authorization_code": authorizationCode
+    };
+  }
+
+  // Construct the message body
+  let requestBody = {
+    "object": "page",
+    "entry": [
+      {
+        "id": "PAGE_ID_AAA",
+        "time": 1458692752478,
+        "messaging": [
+          {
+            "sender": {
+              "id": senderId
+            },
+            "recipient": {
+              "id": "PAGE_ID_AAA"
+            },
+            "timestamp": 1234567890,
+            "account_linking": accountLinkingData
+          }
+        ]
+      }
+    ]
+  }
+
+  // Generar manualmente un evento webhook account_linking
+  request({
+    "uri": "http://localhost:5000/webhook",
+    "method": "POST",
+    "json": requestBody
+  }, (error, response, body) => {
+    if (!error && response.statusCode == 200) {
+      console.trace("[autenticacionBE] La generacion de evento webhook de prueba fue satisfactorio.");
+      // Return a '200 OK' response to all events
+      res.status(200).send('EVENTO_WEBHOOK_DUMMY_ACCOUNT_LINKING_SATISFACTORIO');
+    } else {
+      console.error("[autenticacionBE] La generacion de evento webhook fallo. statusCode: %s, statusMessage: %s, error:\n",
+        response.statusCode, response.statusMessage, body.error);
+      // Return a '200 OK' response to all events
+      res.status(200).send('EVENTO_WEBHOOK_DUMMY_ACCOUNT_LINKING_FALLO');
+    }
+  });
+
+});
+
+/**
+ * Listener para respuestas a FB Messenger para pruebas generadas por Bot-IntegracionFBMessenger.
  */
 app.post('/messages', (req, res) => {
-  console.info('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-  console.info('Request POST /messages;  HTTP request Dummy de FB Messenger');
-  console.info('body: ' + jsonToTextoIdentado(req.body));
-  console.info('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+  console.trace('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+  console.trace('Request POST /messages;  HTTP request Dummy de FB Messenger');
+  console.trace('body: ' + jsonToTextoIdentado(req.body));
+  console.trace('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
 
   // Return a '200 OK' response to all events
   res.status(200).send('RESPUESTA_RECIBIDA_FBMESSENGER');

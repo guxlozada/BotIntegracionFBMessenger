@@ -1,0 +1,120 @@
+/**
+ * Codigo de ejemplo para manejo generico de manejo de llamadas a servicios REST remotos
+ */
+
+function logicaNegocio(senderId, accountLinking) {
+    let status = accountLinking.status;
+    var authCode = accountLinking.authorization_code;
+
+    let optionsLinkUser = {
+        "method": 'POST',
+        "uri": "http://localhost:8080/AppXYZ/webresources/restConsulta1",
+        "json": {
+            "authCode": authCode,
+            "senderId": senderId
+        }
+    };
+    ///////////////// LLAMADA ANIDADA ////////////////////////////////////
+    request(optionsLinkUser, function (error, response, body) {
+
+        if (!error && response.statusCode == 200) {
+
+            redis.set(senderId, authCode).then(function (resBD) {
+                if (resBD !== 'OK') {
+                    sendErrorMessage(senderId, "receivedAccountLink_redis_vinculacion_usuario", new Error("Se produjo un error"
+                        + "al registrar la vinculacion del usuario en Redis BD"));
+                } else {
+                    let optionsInitChat = {
+                        "method": 'GET',
+                        "uri": "http://localhost:8080/AppXYZ/webresources/restProcesar?token=" + authCode
+                    };
+                    ///////////////// LLAMADA ANIDADA ////////////////////////////////////
+                    request(optionsInitChat, function (error1, response1, body1) {
+                        if (!error1 && response1.statusCode == 200) {
+                            let bodyObj = JSON.parse(body1);
+                            callSendAPI(senderId, {
+                                "text": bodyObj['text'],
+                                "metadata": "INIT_BOT"
+                            });
+                        } else {
+                            sendErrorMessage(senderId, "receivedAccountLink_initChat", error1);
+                        }
+                    });
+                }
+            });
+        } else {
+            sendErrorMessage(senderId, "receivedAccountLink_linkUserFB", error);
+        }
+    });
+}
+
+function requestServiceRest(senderId, optionsReq, callbackOK, callbackNotFound) {
+
+    request(optionsReq, function (error, response, body) {
+        if (error) {
+            // Pendiente de implementar y ver como procesarlo
+            procesarErrorNodejs(senderId, body);
+        } else {
+            let codigoEstadoHTTP = '' + response.statusCode;
+            let resBot = JSON.parse(body);
+            switch (codigoEstadoHTTP) {
+                case "200":
+                    // Si la respuesta es un mensaje estandarizado
+                    if (resBot.origen) {
+                        // pasar el objeto estandarizado de la repuesta (texto, boolean, list, map)
+                        callbackOK(resBot);
+                    } else {
+                        callbackOK(body);
+                    }
+                    break;
+                case "400":
+                    // Si la respuesta es un mensaje estandarizado
+                    if (resBot.origen) {
+                        // pasar el objeto estandarizado de la repuesta (texto, boolean, list, map)
+                        callbackNotFound(resBot);
+                    } else {
+                        callbackNotFound(body);
+                    }
+                    break;
+                default:
+                    // Pendiente de implementar
+                    procesarErrorREST(senderId, resBody);
+            }
+        }
+    });
+}
+
+function logicaNegocioDespues(senderId, accountLinking) {
+    let status = accountLinking.status;
+    var authCode = accountLinking.authorization_code;
+
+    let optionsLinkUser = {
+        "method": 'POST',
+        "uri": "http://localhost:8080/AppXYZ/webresources/restConsulta1",
+        "json": {
+            "authCode": authCode,
+            "senderId": senderId
+        }
+    };
+
+    requestServiceRest(senderId, optionsLinkUser, function (body) {
+        redis.set(senderId, authCode).then(function (resBD) {
+            if (resBD !== 'OK') {
+                sendErrorMessage(senderId, "receivedAccountLink_redis_vinculacion_usuario", new Error("Se produjo un error"
+                    + "al registrar la vinculacion del usuario en Redis BD"));
+            } else {
+                let optionsRest = {
+                    "method": 'GET',
+                    "uri": "http://localhost:8080/AppXYZ/webresources/restProcesar?token=" + authCode
+                };
+                requestServiceRest(senderId, optionsRest, function (body2) {
+                    let bodyObj = JSON.parse(body1);
+                    callSendAPI(senderId, {
+                        "text": bodyObj['text'],
+                        "metadata": "INIT_BOT"
+                    });
+                });
+            }
+        });
+    });
+}

@@ -1,0 +1,237 @@
+{
+	"info": {
+		"_postman_id": "c12e0955-889c-c31c-b170-0abd75fc1a89",
+		"name": "Bot-IntegracionFBMessenger DEMO",
+		"description": "dummy de llamadas a la aplicacion de integracion de FB Messenger, version demo basica",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "messages DEMO Bot-IntFB webhook",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"object\":\"page\",\r\n    \"entry\":[\r\n        {\r\n            \"id\": \"PAGE_ID_AAA\",\r\n            \"time\": 1458692752478,\r\n            \"messaging\": [\r\n                {\r\n                    \"sender\": {\r\n                        \"id\": \"PSID_000\"\r\n                    },\r\n                    \"recipient\": {\r\n                        \"id\": \"PAGE_ID_AAA\"\r\n                    },\r\n                    \"timestamp\": 1458692752478,\r\n                    \"message\": {\r\n                        \"mid\": \"mid.1457764197618:41d102a3e1ae206a38\",\r\n                        \"text\": \"hello, world!\"\r\n                    }\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/webhook",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"webhook"
+					]
+				},
+				"description": "evento webhook: message\ntipo mensaje: texto"
+			},
+			"response": []
+		},
+		{
+			"name": "messages (quick_reply) DEMO Bot-IntFB webhook Copy",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"object\":\"page\",\r\n    \"entry\":[\r\n        {\r\n            \"id\": \"PAGE_ID_AAA\",\r\n            \"time\": 1458692752478,\r\n            \"messaging\": [\r\n                {\r\n                    \"sender\": {\r\n                        \"id\": \"PSID_000\"\r\n                    },\r\n                    \"recipient\": {\r\n                        \"id\": \"PAGE_ID_AAA\"\r\n                    },\r\n                    \"timestamp\": 1458692752478,\r\n                    \"message\": {\r\n                        \"mid\": \"mid.1457764197618:41d102a3e1ae206a38\",\r\n                        \"text\": \"hello, world!\",\r\n                        \"quick_reply\": {\r\n                            \"payload\": \"<DEVELOPER_DEFINED_PAYLOAD>\"\r\n                        }\r\n                    }\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/webhook",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"webhook"
+					]
+				},
+				"description": "INICIO"
+			},
+			"response": []
+		},
+		{
+			"name": "messaging_optins DEMO Bot-IntFB webhook",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"object\":\"page\",\r\n    \"entry\":[\r\n        {\r\n            \"id\": \"PAGE_ID_AAA\",\r\n            \"time\": 1458692752478,\r\n            \"messaging\": [\r\n                {\r\n                    \"sender\": {\r\n                        \"id\": \"PSID_000\"\r\n                    },\r\n                    \"recipient\": {\r\n                        \"id\": \"PAGE_ID_AAA\"\r\n                    },\r\n                    \"timestamp\": 1234567890,\r\n\t\t\t\t\t\"optin\": {\r\n    \t\t\t\t\t\"ref\": \"<PASS_THROUGH_PARAM>\",\r\n    \t\t\t\t\t\"user_ref\": \"<REF_FROM_CHECKBOX_PLUGIN>\"\r\n\t\t\t\t\t}\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/webhook",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"webhook"
+					]
+				},
+				"description": "INICIO"
+			},
+			"response": []
+		},
+		{
+			"name": "messaging_account_linking -linked DEMO Bot-IntFB webhook",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"object\":\"page\",\r\n    \"entry\":[\r\n        {\r\n            \"id\": \"PAGE_ID_AAA\",\r\n            \"time\": 1458692752478,\r\n            \"messaging\": [\r\n                {\r\n                    \"sender\": {\r\n                        \"id\": \"PSID_000\"\r\n                    },\r\n                    \"recipient\": {\r\n                        \"id\": \"PAGE_ID_AAA\"\r\n                    },\r\n                    \"timestamp\": 1234567890,\r\n                    \"account_linking\": {\r\n                        \"status\": \"linked\",\r\n                        \"authorization_code\": \"PASS_THROUGH_AUTHORIZATION_CODE\"\r\n                    }\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/webhook",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"webhook"
+					]
+				},
+				"description": "INICIO"
+			},
+			"response": []
+		},
+		{
+			"name": "messaging_account_linking -unlinked DEMO Bot-IntFB webhook",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"object\":\"page\",\r\n    \"entry\":[\r\n        {\r\n            \"id\": \"PAGE_ID_AAA\",\r\n            \"time\": 1458692752478,\r\n            \"messaging\": [\r\n                {\r\n                    \"sender\": {\r\n                        \"id\": \"PSID_000\"\r\n                    },\r\n                    \"recipient\": {\r\n                        \"id\": \"PAGE_ID_AAA\"\r\n                    },\r\n                    \"timestamp\": 1234567890,\r\n                    \"account_linking\": {\r\n                        \"status\": \"unlinked\"\r\n                    }\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/webhook",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"webhook"
+					]
+				},
+				"description": "INICIO"
+			},
+			"response": []
+		},
+		{
+			"name": "messaging_postbacks DEMO Bot-IntFB webhook",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "000cf193-fa88-4728-9cc4-8f1ccda64a21",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"object\":\"page\",\r\n    \"entry\":[\r\n        {\r\n            \"id\": \"PAGE_ID_AAA\",\r\n            \"time\": 1458692752478,\r\n            \"messaging\": [\r\n                {\r\n                    \"sender\": {\r\n                        \"id\": \"PSID_000\"\r\n                    },\r\n                    \"recipient\": {\r\n                        \"id\": \"PAGE_ID_AAA\"\r\n                    },\r\n                    \"timestamp\": 1234567890,\r\n                    \"postback\": {\r\n                        \"title\": \"<TITLE_FOR_THE_CTA>\",\r\n                        \"payload\": \"<USER_DEFINED_PAYLOAD>\",\r\n                        \"referral\": {\r\n                            \"ref\": \"<USER_DEFINED_REFERRAL_PARAM>\",\r\n                            \"source\": \"<SHORTLINK>\",\r\n                            \"type\": \"OPEN_THREAD\"\r\n                        }\r\n                    }\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/webhook",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"webhook"
+					]
+				},
+				"description": "INICIO"
+			},
+			"response": []
+		},
+		{
+			"name": "message_reads DEMO Bot-IntFB webhook",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "000cf193-fa88-4728-9cc4-8f1ccda64a21",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"object\":\"page\",\r\n    \"entry\":[\r\n        {\r\n            \"id\": \"PAGE_ID_AAA\",\r\n            \"time\": 1458692752478,\r\n            \"messaging\": [\r\n                {\r\n                    \"sender\": {\r\n                        \"id\": \"PSID_000\"\r\n                    },\r\n                    \"recipient\": {\r\n                        \"id\": \"PAGE_ID_AAA\"\r\n                    },\r\n                    \"timestamp\": 1234567890,\r\n                    \"read\": {\r\n                        \"watermark\": 1458668856253,\r\n                        \"seq\": 38\r\n                    }\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:5000/webhook",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"webhook"
+					]
+				},
+				"description": "INICIO"
+			},
+			"response": []
+		}
+	]
+}
