@@ -67,7 +67,7 @@ const URI_NLP_REST = process.env.URI_AUT_REST || config.get('uriNPLRest');
 const ID_APP = 'BOT-FB';
 // Ambiente de operacion (default=desarrollo maquina local; desarrollo; certificacion; produccion)
 const NODE_ENV = process.env.NODE_ENV || 'default';
-const MODO_PRODUCCION = NODE_ENV === 'produccion';
+const MODO_PRODUCCION = NODE_ENV === 'production';
 const PUERTO_HTTP = process.env.PORT || 5000;
 
 

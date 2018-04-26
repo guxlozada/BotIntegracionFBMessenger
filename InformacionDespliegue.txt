@@ -6,7 +6,8 @@ BD: Redis
 # Variables de sistema
 
 -   process.env.NODE_ENV: (REQUERIDO) Se utiliza para identificar el modo de ejecucion de la aplicacion. 
-    Opciones (desarrollo, produccion, OTRO_PERSONALIZADO, default). 
+    Opciones (desarrollo, production, OTRO_PERSONALIZADO, default). 
+    Se utiliza el valor 'production' ya que heroku asigna process.env.NODE_ENV=production.
     En caso de no definir esta variable se utiliza el valor por omision: 'default'.
 -   process.env.PORT: (OPCIONAL) Se utiliza para modificar el puerto de despliegue de la aplicacion.
     En caso de no definir esta variable se utiliza el valor por omision: 5000.
@@ -40,9 +41,10 @@ definidas en la aplicacion.
 
 # Variables de ambiente
 
-(1) config/produccion.json: Variables de ambiente por omision que se utilizan cuando la variable 
+(1) config/production.json: Variables de ambiente por omision que se utilizan cuando la variable 
     process.env.NODE_ENV=produccion y no se ha definido la variable en el sistema (ver apartado anterior). 
     En caso de no definir variables se utilizan los valores por omision del archivo 'default.json'.
+    Se utiliza el nombre 'production.json' ya que heroku asigna process.env.NODE_ENV=production.
 (2) config/desarrollo.json: Variables de ambiente por omision que se utilizan cuando la variable 
     process.env.NODE_ENV=desarrollo y no se ha definido la variable en el sistema (ver apartado anterior). 
     En caso de no definir variables se utilizan los valores por omision del archivo 'default.json'.
@@ -51,7 +53,7 @@ definidas en la aplicacion.
 
 # Ambientes adicionales
 
-Para crear variables de ambiente que se utilizen en modo diferente al de desarrollo y produccion, se necesita:
+Para crear variables de ambiente que se utilizen en modo diferente al de desarrollo y production, se necesita:
 (1) Asignar el nombre del ambiente adicional a la variable process.env.NODE_ENV=otro_ambiente/certificacion/etc.
 (2) De ser necesario se puede crear un archivo 'config/otro_ambiente.json' dondes se defina los valores personalizados
     para las variables de ambiente.
